@@ -38,6 +38,8 @@
             padding: 0.5em 2em;
             background-color: #fff;
             box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+            justify-content: flex-start;
+            /* Ensure content starts from the left */
         }
 
         .header-top .logo {
@@ -100,12 +102,15 @@
         }
 
         .search-bar {
-            flex-grow: 1;
+            width: 15%;
+            /* Adjust the width of the search bar to 15% of its container */
             margin-right: 1em;
+            /* Adjust if needed to create some space to the next element */
         }
 
         .search-box {
             width: 100%;
+            /* This makes the input field take up the full width of its container, the .search-bar */
             padding: 0.5em;
             border: 1px solid #ddd;
             border-radius: 20px;
@@ -308,28 +313,28 @@
     </script>
     <script>
         function initMap() {
-    var map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 10,
-        center: { lat: 42.686718, lng: -83.1338 } // Set this to a default location
-    });
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 10,
+                center: { lat: 42.686718, lng: -83.1338 } // Set this to a default location
+            });
 
-    var listings = JSON.parse('{{ data | tojson | safe }}');
-    var infoWindow = new google.maps.InfoWindow();
+            var listings = JSON.parse('{{ data | tojson | safe }}');
+            var infoWindow = new google.maps.InfoWindow();
 
-    listings.forEach(function (listing) {
-        var price = listing.price;
-        var priceText = price >= 1000000 ? (price / 1000000).toFixed(1) + 'M' : (price / 1000).toFixed(0) + 'k';
-        listing.priceText = priceText;
-        listing.meetsCriteria = false; // Initialize meetsCriteria property
+            listings.forEach(function (listing) {
+                var price = listing.price;
+                var priceText = price >= 1000000 ? (price / 1000000).toFixed(1) + 'M' : (price / 1000).toFixed(0) + 'k';
+                listing.priceText = priceText;
+                listing.meetsCriteria = false; // Initialize meetsCriteria property
 
-        var marker = new google.maps.Marker({
-            position: { lat: listing.latitude, lng: listing.longitude },
-            map: map,
-            title: listing.streetAddress,
-            icon: getMarkerIcon('#006AFF', priceText) // Initial blue icon
-        });
+                var marker = new google.maps.Marker({
+                    position: { lat: listing.latitude, lng: listing.longitude },
+                    map: map,
+                    title: listing.streetAddress,
+                    icon: getMarkerIcon('#006AFF', priceText) // Initial blue icon
+                });
 
-        var infoWindowContent = `
+                var infoWindowContent = `
             <div class="custom-info-window">
                 <img src="${listing.imgSrc}" alt="House Image">
                 <h4>${listing.streetAddress}</h4>
@@ -338,65 +343,65 @@
             </div>
         `;
 
-        marker.addListener('click', function () {
-            infoWindow.setContent(infoWindowContent);
-            infoWindow.open(map, marker);
-        });
+                marker.addListener('click', function () {
+                    infoWindow.setContent(infoWindowContent);
+                    infoWindow.open(map, marker);
+                });
 
-        listing.marker = marker;
-    });
+                listing.marker = marker;
+            });
 
-    function updateMarkerColors() {
-    const cocValue = parseFloat(document.querySelector('input[name="coc"]').value);
-    const cashToCloseValue = parseFloat(document.querySelector('input[name="cash-to-close"]').value.replace(/,/g, ''));
-    const capRateLowValue = parseFloat(document.querySelector('input[name="cap-rate-low"]').value);
-    const capRateHighValue = parseFloat(document.querySelector('input[name="cap-rate-high"]').value);
+            function updateMarkerColors() {
+                const cocValue = parseFloat(document.querySelector('input[name="coc"]').value);
+                const cashToCloseValue = parseFloat(document.querySelector('input[name="cash-to-close"]').value.replace(/,/g, ''));
+                const capRateLowValue = parseFloat(document.querySelector('input[name="cap-rate-low"]').value);
+                const capRateHighValue = parseFloat(document.querySelector('input[name="cap-rate-high"]').value);
 
-    listings.forEach(function (listing) {
-        const cashOnCashReturn = listing['Cash on Cash Return %'];
-        const cashToClose = listing['Cash To Close'];
-        const capRate = listing['Cap Rate'];
+                listings.forEach(function (listing) {
+                    const cashOnCashReturn = listing['Cash on Cash Return %'];
+                    const cashToClose = listing['Cash To Close'];
+                    const capRate = listing['Cap Rate'];
 
-        listing.meetsCriteria = (
-            cashOnCashReturn >= cocValue &&
-            cashToClose <= cashToCloseValue &&
-            capRate >= capRateLowValue &&
-            capRate <= capRateHighValue
-        );
+                    listing.meetsCriteria = (
+                        cashOnCashReturn >= cocValue &&
+                        cashToClose <= cashToCloseValue &&
+                        capRate >= capRateLowValue &&
+                        capRate <= capRateHighValue
+                    );
 
-        const markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
-        listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
-    });
-}
+                    const markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
+                    listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
+                });
+            }
 
-    var inputFields = document.querySelectorAll('.deals-dropdown-content input');
-    inputFields.forEach(function (input) {
-        input.addEventListener('change', updateMarkerColors);
-    });
+            var inputFields = document.querySelectorAll('.deals-dropdown-content input');
+            inputFields.forEach(function (input) {
+                input.addEventListener('change', updateMarkerColors);
+            });
 
-    updateMarkerColors(); // Initialize marker colors based on criteria
+            updateMarkerColors(); // Initialize marker colors based on criteria
 
-    map.addListener('zoom_changed', function() {
-        listings.forEach(function (listing) {
-            var markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
-            listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
-        });
-    });
+            map.addListener('zoom_changed', function () {
+                listings.forEach(function (listing) {
+                    var markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
+                    listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
+                });
+            });
 
-    function getMarkerIcon(color, priceText) {
-        var markerSVG = `
+            function getMarkerIcon(color, priceText) {
+                var markerSVG = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" width="40" height="20">
                 <rect x="0" y="0" width="40" height="20" rx="10" ry="10" fill="${color}" />
                 <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-weight="bold" font-size="10">${priceText}</text>
             </svg>
         `;
-        return {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(markerSVG),
-            scaledSize: new google.maps.Size(40, 20),
-            anchor: new google.maps.Point(20, 10)
-        };
-    }
-}
+                return {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(markerSVG),
+                    scaledSize: new google.maps.Size(40, 20),
+                    anchor: new google.maps.Point(20, 10)
+                };
+            }
+        }
 
     </script>
 </head>
