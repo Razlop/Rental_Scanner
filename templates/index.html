@@ -59,30 +59,118 @@
             display: inline-block;
         }
 
+        .deal-button {
+            padding: 0.5em 1em;
+            background-color: #fff;
+            /* White background */
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            /* Rounded edges */
+            cursor: pointer;
+            margin-right: 8px;
+            /* Add some margin to the right */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* Optional: Add subtle shadow */
+            transition: all 0.3s ease;
+            /* Smooth transition for color changes */
+        }
+
+
+        /* Style for the dropdown content container */
         .deals-dropdown-content {
             display: none;
             position: absolute;
-            background-color: #f9f9f9;
-            min-width: 200px;
-            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-            padding: 12px;
+            background-color: #fff;
+            /* White background */
+            min-width: 250px;
+            /* Adjust to match the design */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            /* Shadow for the dropdown */
             z-index: 1;
+            border-radius: 8px;
+            /* Match the border radius */
+            padding: 12px;
+            border: 1px solid #ddd;
+            /* Add a border */
+            top: 100%;
+            /* Align it right below the dropdown button */
+            left: 0;
+            /* Align to the left edge of the .deals-dropdown */
+            margin-top: 4px;
+            /* Add a little space between button and dropdown */
         }
 
-        .deals-dropdown:hover .deals-dropdown-content {
-            display: block;
+        /* Hover state for the dropdown button */
+        .deal-button:hover {
+            background-color: #e0e0e0;
+            /* Lighter shade on hover */
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            /* Optional: Slightly deeper shadow on hover */
         }
 
+        /* Style for dropdown labels and inputs */
         .deals-dropdown-content label {
             display: block;
             margin-bottom: 8px;
+            color: #333;
+            /* Set the text color */
         }
 
         .deals-dropdown-content input {
             width: 100%;
-            padding: 4px;
+            padding: 8px;
             margin-top: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            /* Rounded corners for input fields */
+            box-sizing: border-box;
+            /* Include padding and border in the element's total width and height */
         }
+
+        /* Button container styles */
+        .dropdown-buttons {
+            display: flex;
+            justify-content: space-between;
+            padding-top: 12px;
+            /* Add space between the buttons and the form elements above */
+        }
+
+        /* General button styles */
+        .dropdown-btn {
+            padding: 10px 20px;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            font-weight: 600;
+            margin: 4px;
+            /* Add a small margin around buttons */
+        }
+
+        /* Specific styles for the cancel button */
+        .cancel {
+            background-color: #f7f7f7;
+            /* Light gray background */
+            color: #333;
+            /* Dark text */
+        }
+
+        /* Specific styles for the apply button */
+        .apply {
+            background-color: #0074e4;
+            /* Use the same blue as in the header */
+            color: white;
+            /* White text */
+            border-color: #005cbf;
+            /* Slightly darker border for some depth */
+        }
+
+        /* Hover styles for buttons */
+        .dropdown-btn:hover {
+            opacity: 0.8;
+        }
+
 
         .nav-item {
             padding: 0.5em 1em;
@@ -280,7 +368,40 @@
             margin: 0;
         }
     </style>
+    <script>
+        $(document).ready(function () {
+            // Toggle the dropdown on click
+            $('.deals-dropdown .search-option').on('click', function (event) {
+                $(this).next('.deals-dropdown-content').toggle();
+                event.stopPropagation(); // Prevent event from bubbling up to the document
+            });
 
+            // Close the dropdown when clicking outside
+            $(document).on('click', function () {
+                $('.deals-dropdown-content').hide();
+            });
+
+            // Prevent the dropdown from closing when clicking inside it
+            $('.deals-dropdown-content').on('click', function (event) {
+                event.stopPropagation(); // Stop the click from propagating up to the document
+            });
+
+            // Hide dropdown when cancel is clicked
+            $('#cancel-button').on('click', function () {
+                $(this).closest('.deals-dropdown-content').hide();
+            });
+
+            // Logic for when apply is clicked
+            $('#apply-button').on('click', function () {
+                // You can call your function to apply filters here
+                // For example:
+                // applyFilters();
+
+                $(this).closest('.deals-dropdown-content').hide();
+            });
+        });
+
+    </script>
     <script>
         $(document).ready(function () {
             var dataTable = $('#house-listings').DataTable();
@@ -351,11 +472,30 @@
                 listing.marker = marker;
             });
 
+            // Add this code block after the listings.forEach loop
+            google.maps.event.addListener(map, 'zoom_changed', function () {
+                listings.forEach(function (listing) {
+                    listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText));
+                });
+            });
+
+            function isCloseToMetric(listingValue, inputValue, tolerancePercent) {
+                var tolerance = inputValue * (tolerancePercent / 100);
+                return listingValue >= (inputValue - tolerance) && listingValue <= (inputValue + tolerance);
+            }
+
+            let cocValue, cashToCloseValue, capRateLowValue, capRateHighValue;
+
+            $('#apply-button').on('click', function () {
+                updateMarkerColors();
+                $(this).closest('.deals-dropdown-content').hide();
+            });
+
             function updateMarkerColors() {
-                const cocValue = parseFloat(document.querySelector('input[name="coc"]').value);
-                const cashToCloseValue = parseFloat(document.querySelector('input[name="cash-to-close"]').value.replace(/,/g, ''));
-                const capRateLowValue = parseFloat(document.querySelector('input[name="cap-rate-low"]').value);
-                const capRateHighValue = parseFloat(document.querySelector('input[name="cap-rate-high"]').value);
+                cocValue = parseFloat(document.querySelector('input[name="coc"]').value);
+                cashToCloseValue = parseFloat(document.querySelector('input[name="cash-to-close"]').value.replace(/,/g, ''));
+                capRateLowValue = parseFloat(document.querySelector('input[name="cap-rate-low"]').value);
+                capRateHighValue = parseFloat(document.querySelector('input[name="cap-rate-high"]').value);
 
                 listings.forEach(function (listing) {
                     const cashOnCashReturn = listing['Cash on Cash Return %'];
@@ -369,9 +509,26 @@
                         capRate <= capRateHighValue
                     );
 
-                    const markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
-                    listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
+                    const tolerancePercent = 5;
+                    const cocLowerBound = cocValue - tolerancePercent;
+                    const cocClose = cashOnCashReturn >= cocLowerBound && cashOnCashReturn < cocValue;
+
+                    if (listing.meetsCriteria) {
+                        listing.markerColor = '#4CAF50';
+                    } else if (cocClose && !listing.meetsCriteria) {
+                        listing.markerColor = 'yellow';
+                    } else {
+                        listing.markerColor = '#006AFF';
+                    }
+
+                    listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText));
                 });
+            }
+
+            // Helper function to determine if a listing's value is 'close' to the user's input
+            function isCloseToMetric(listingValue, inputValue, tolerancePercent) {
+                var tolerance = inputValue * (tolerancePercent / 100);
+                return listingValue >= (inputValue - tolerance) && listingValue <= (inputValue + tolerance);
             }
 
             var inputFields = document.querySelectorAll('.deals-dropdown-content input');
@@ -381,12 +538,6 @@
 
             updateMarkerColors(); // Initialize marker colors based on criteria
 
-            map.addListener('zoom_changed', function () {
-                listings.forEach(function (listing) {
-                    var markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
-                    listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
-                });
-            });
 
             function getMarkerIcon(color, priceText) {
                 var markerSVG = `
@@ -439,6 +590,10 @@
                         <label>Cap Rate (Low): <input type="text" name="cap-rate-low" value="5%" /></label>
                         <label>Cap Rate (High): <input type="text" name="cap-rate-high" value="10%" /></label>
                         <!-- Add more fields as needed -->
+                        <div class="dropdown-buttons">
+                            <button id="cancel-button" class="dropdown-btn cancel">Cancel</button>
+                            <button id="apply-button" class="dropdown-btn apply">Apply</button>
+                        </div>
                     </div>
                 </div>
                 <button class="search-option">More</button>
