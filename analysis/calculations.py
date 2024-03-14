@@ -80,7 +80,7 @@ def cash_to_close(row):
     down_payment = row['Down Payment']
     closing_costs = price * CLOSING_COSTS_PERCENT
 
-    cash_to_close = closing_costs + down_payment
+    cash_to_close = round(closing_costs + down_payment)
     # Return the lending details as a dictionary
     return pd.Series({
         'Closing Costs': closing_costs,
@@ -105,21 +105,21 @@ def calculate_returns(row):
     # Calculate the annual cash flow
     annual_cash_flow = annual_rental_income - annual_expenses - (monthly_mortgage_payment * 12)
 
-    # Calculate the monthly cash flow
-    monthly_cash_flow = annual_cash_flow / 12
+    # Replace NaN with 0 before rounding
+    monthly_cash_flow = round(np.nan_to_num(annual_cash_flow / 12))
 
     # Calculate the total investment
     total_investment = down_payment + loan_amount
 
     # Calculate the Cash on Cash Return %
     if total_investment != 0:
-        cash_on_cash_return = (annual_cash_flow / total_investment) * 100
+        cash_on_cash_return = round((annual_cash_flow / total_investment) * 100, 1)
     else:
         cash_on_cash_return = 0
 
     # Calculate the Cap Rate
     if price != 0:
-        cap_rate = (annual_rental_income - annual_expenses) / price
+        cap_rate = round(((annual_rental_income - annual_expenses) / price) * 100, 1)
     else:
         cap_rate = 0
 

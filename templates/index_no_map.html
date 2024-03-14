@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>House Listings</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .sort-options {
+            margin-bottom: 20px;
+        }
+
+        .sort-options select {
+            margin-right: 10px;
+        }
+
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .listing-item {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .listing-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .listing-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .listing-item h3 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        @media screen and (max-width: 768px) {
+            .listing-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #0074e4;
+            color: #fff;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .search-options {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-options select,
+        .search-options input[type="text"] {
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .search-options button {
+            padding: 8px 16px;
+            background-color: #fff;
+            color: #0074e4;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .saved-searches {
+            margin-left: auto;
+        }
+
+        .saved-searches a {
+            color: #fff;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+    </style>
+    <script>
+        $(document).ready(function () {
+            var dataTable = $('#house-listings').DataTable();
+
+            // Sort event handler
+            $('#sort-by').on('change', function () {
+                var selectedOption = $(this).val();
+                var columnIndex = getColumnIndex(selectedOption);
+                dataTable.order([columnIndex, 'desc']).draw();
+            });
+
+            // Helper function to get the column index based on the selected option
+            function getColumnIndex(option) {
+                switch (option) {
+                    case 'address':
+                        return 0;
+                    case 'cash_on_cash_return':
+                        return 1;
+                    case 'monthly_cash_flow':
+                        return 2;
+                    case 'cap_rate':
+                        return 3;
+                    case 'cash_to_close':
+                        return 4;
+                    default:
+                        return 0;
+                }
+            }
+        });
+    </script>
+</head>
+
+<body>
+    <header>
+        <a href="#" class="logo">Stefen</a>
+        <div class="search-options">
+            <select>
+                <option>Buy</option>
+                <option>Rent</option>
+                <option>Sell</option>
+                <option>Home Loans</option>
+                <option>Agent finder</option>
+            </select>
+            <input type="text" placeholder="City, Neighborhood, ZIP, Address">
+            <button>Search</button>
+        </div>
+        <div class="saved-searches">
+            <a href="#">Saved Homes</a>
+            <a href="#">Saved Searches</a>
+        </div>
+    </header>
+
+    <div class="sort-options">
+        <label for="sort-by">Sort by:</label>
+        <select id="sort-by">
+            <option value="address">Address</option>
+            <option value="cash_on_cash_return">Cash on Cash Return %</option>
+            <option value="monthly_cash_flow">Monthly Cash Flow</option>
+            <option value="cap_rate">Cap Rate %</option>
+            <option value="cash_to_close">Cash to Close</option>
+        </select>
+    </div>
+    <table id="house-listings">
+        <thead>
+            <tr>
+                <th>Address</th>
+                <th>Cash on Cash Return %</th>
+                <th>Monthly Cash Flow</th>
+                <th>Cap Rate %</th>
+                <th>Cash to Close</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                <td>{{ row['streetAddress'] }}</td>
+                <td>{{ row['Cash on Cash Return %'] }}</td>
+                <td>{{ row['Monthly Cash Flow'] }}</td>
+                <td>{{ row['Cap Rate'] }}</td>
+                <td>{{ row['Cash To Close'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="listing-grid">
+        {% for row in data %}
+        <div class="listing-item">
+            <img src="{{ row['imgSrc'] }}" alt="House Image">
+            <h3>{{ row['streetAddress'] }}</h3>
+            <p>Cash on Cash Return %: {{ row['Cash on Cash Return %'] }}</p>
+            <p>Monthly Cash Flow: {{ row['Monthly Cash Flow'] }}</p>
+            <p>Cap Rate %: {{ row['Cap Rate'] }}</p>
+            <p>Cash to Close: {{ row['Cash To Close'] }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>

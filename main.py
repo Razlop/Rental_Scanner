@@ -83,39 +83,6 @@ def main():
         df.to_json(filepath, orient="records")
 
         print("Calculations Complete")
-        
-        # Select the main data for each house
-        main_data = df[['streetAddress', 'Cash on Cash Return %', 'Monthly Cash Flow', 'Cap Rate', 'Down Payment', 'Loan Amount']]
-
-        # Convert the relevant columns to appropriate data types
-        main_data['Cash on Cash Return %'] = main_data['Cash on Cash Return %'].astype(float)
-        main_data['Monthly Cash Flow'] = main_data['Monthly Cash Flow'].astype(float)
-        main_data['Cap Rate'] = main_data['Cap Rate'].astype(float)
-        main_data['Down Payment'] = main_data['Down Payment'].astype(float)
-        main_data['Loan Amount'] = main_data['Loan Amount'].astype(float)
-
-        # Calculate the Cash to Close
-        main_data.loc[:, 'Cash to Close'] = main_data['Down Payment'] + main_data['Loan Amount']
-
-        # Rename the columns for better readability
-        main_data.columns = ['Address', 'CoC', 'Monthly Cash Flow', 'Cap Rate', 'Down Payment', 'Loan Amount', 'Cash to Close']
-
-        # Format the data for display
-        main_data.loc[:, 'CoC'] = main_data['CoC'].apply(lambda x: f"{x:.2f}%")
-        main_data.loc[:, 'Monthly Cash Flow'] = main_data['Monthly Cash Flow'].apply(lambda x: f"${x:,.0f}")
-        main_data.loc[:, 'Cap Rate'] = main_data['Cap Rate'].apply(lambda x: f"{x:.2%}")
-        main_data.loc[:, 'Down Payment'] = main_data['Down Payment'].apply(lambda x: f"${x:,.0f}")
-        main_data.loc[:, 'Loan Amount'] = main_data['Loan Amount'].apply(lambda x: f"${x:,.0f}")
-        main_data.loc[:, 'Cash to Close'] = main_data['Cash to Close'].apply(lambda x: f"${x:,.0f}")
-
-        # Select the desired columns for display
-        main_data = main_data[['Address', 'CoC', 'Monthly Cash Flow', 'Cap Rate', 'Cash to Close']]
-
-        # Display the main data in a table format
-        print("House Analysis Summary:")
-        print("----------------------")
-        print(main_data.to_string(index=False))
-
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")

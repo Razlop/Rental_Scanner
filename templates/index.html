@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>House Listings</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 14px;
+        }
+
+        header {
+            display: flex;
+            flex-direction: column;
+            background-color: #fff;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #006AFF;
+            color: white;
+            padding: 0.5em 2em;
+        }
+
+        .header-bottom {
+            display: flex;
+            align-items: center;
+            padding: 0.5em 2em;
+            background-color: #fff;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-top .logo {
+            font-size: 24px;
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .header-nav,
+        .saved-searches {
+            display: flex;
+        }
+
+        .deals-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .deals-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 200px;
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            z-index: 1;
+        }
+
+        .deals-dropdown:hover .deals-dropdown-content {
+            display: block;
+        }
+
+        .deals-dropdown-content label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .deals-dropdown-content input {
+            width: 100%;
+            padding: 4px;
+            margin-top: 4px;
+        }
+
+        .nav-item {
+            padding: 0.5em 1em;
+            margin: 0 0.25em;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .nav-item:not(.logo):hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .saved-searches a {
+            margin-left: 20px;
+            font-size: 0.9em;
+        }
+
+        .search-bar {
+            flex-grow: 1;
+            margin-right: 1em;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.5em;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 1em;
+        }
+
+        .search-options {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-option,
+        .search-button {
+            padding: 0.5em 1em;
+            margin-left: 0.5em;
+            background-color: #f7f7f7;
+            color: #333;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-option:hover,
+        .search-button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .search-button {
+            background-color: #0074e4;
+            color: white;
+        }
+
+        .search-button:hover {
+            background-color: #005cbf;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 120px);
+        }
+
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+
+        .listing-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .listing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .listing-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .listing-header p {
+            font-size: 16px;
+            color: #666;
+            margin: 0;
+        }
+
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .listing-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .listing-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .listing-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .listing-details {
+            padding: 10px;
+        }
+
+        .price-details {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .price-details h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            color: #006AFF;
+        }
+
+        .price-details p {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+
+        .address {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .listing-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .listing-stats p {
+            font-size: 14px;
+            margin: 2px 0;
+        }
+
+        .custom-marker {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            text-align: center;
+            font-weight: bold;
+            color: #006AFF;
+            width: 50px;
+        }
+
+        .custom-info-window {
+            max-width: 200px;
+            padding: 10px;
+        }
+
+        .custom-info-window img {
+            width: 100%;
+            height: auto;
+            margin-bottom: 5px;
+        }
+
+        .custom-info-window h4 {
+            margin: 0 0 5px;
+        }
+
+        .custom-info-window p {
+            margin: 0;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            var dataTable = $('#house-listings').DataTable();
+
+            // Sort event handler
+            $('#sort-by').on('change', function () {
+                var selectedOption = $(this).val();
+                var columnIndex = getColumnIndex(selectedOption);
+                dataTable.order([columnIndex, 'desc']).draw();
+            });
+
+            // Helper function to get the column index based on the selected option
+            function getColumnIndex(option) {
+                switch (option) {
+                    case 'address':
+                        return 0;
+                    case 'cash_on_cash_return':
+                        return 1;
+                    case 'monthly_cash_flow':
+                        return 2;
+                    case 'cap_rate':
+                        return 3;
+                    case 'cash_to_close':
+                        return 4;
+                    default:
+                        return 0;
+                }
+            }
+        });
+    </script>
+    <script>
+        function initMap() {
+    var map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 10,
+        center: { lat: 42.686718, lng: -83.1338 } // Set this to a default location
+    });
+
+    var listings = JSON.parse('{{ data | tojson | safe }}');
+    var infoWindow = new google.maps.InfoWindow();
+
+    listings.forEach(function (listing) {
+        var price = listing.price;
+        var priceText = price >= 1000000 ? (price / 1000000).toFixed(1) + 'M' : (price / 1000).toFixed(0) + 'k';
+        listing.priceText = priceText;
+        listing.meetsCriteria = false; // Initialize meetsCriteria property
+
+        var marker = new google.maps.Marker({
+            position: { lat: listing.latitude, lng: listing.longitude },
+            map: map,
+            title: listing.streetAddress,
+            icon: getMarkerIcon('#006AFF', priceText) // Initial blue icon
+        });
+
+        var infoWindowContent = `
+            <div class="custom-info-window">
+                <img src="${listing.imgSrc}" alt="House Image">
+                <h4>${listing.streetAddress}</h4>
+                <p>${listing.bedrooms} bds | ${listing.bathrooms} ba | ${listing.livingArea} sqft</p>
+                <p>$${listing.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
+            </div>
+        `;
+
+        marker.addListener('click', function () {
+            infoWindow.setContent(infoWindowContent);
+            infoWindow.open(map, marker);
+        });
+
+        listing.marker = marker;
+    });
+
+    function updateMarkerColors() {
+        listings.forEach(function (listing) {
+            // Condition to determine if listing meets criteria
+            // Example condition, replace with actual criteria
+            listing.meetsCriteria = (listing['Cash on Cash Return %'] >= 5); 
+
+            var markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
+            listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
+        });
+    }
+
+    var inputFields = document.querySelectorAll('.deals-dropdown-content input');
+    inputFields.forEach(function (input) {
+        input.addEventListener('change', updateMarkerColors);
+    });
+
+    updateMarkerColors(); // Initialize marker colors based on criteria
+
+    map.addListener('zoom_changed', function() {
+        listings.forEach(function (listing) {
+            var markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
+            listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
+        });
+    });
+
+    function getMarkerIcon(color, priceText) {
+        var markerSVG = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" width="40" height="20">
+                <rect x="0" y="0" width="40" height="20" rx="10" ry="10" fill="${color}" />
+                <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-weight="bold" font-size="10">${priceText}</text>
+            </svg>
+        `;
+        return {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(markerSVG),
+            scaledSize: new google.maps.Size(40, 20),
+            anchor: new google.maps.Point(20, 10)
+        };
+    }
+}
+
+    </script>
+</head>
+
+<body>
+    <header>
+        <div class="header-top">
+            <a href="#" class="logo">Stefen</a>
+            <div class="header-nav">
+                <div class="nav-item">Buy</div>
+                <div class="nav-item">Rent</div>
+                <div class="nav-item">Sell</div>
+                <div class="nav-item">Home Loans</div>
+                <div class="nav-item">Agent Finder</div>
+            </div>
+            <div class="saved-searches">
+                <a href="#" class="saved-links">Saved Homes</a>
+                <a href="#" class="saved-links">Saved Searches</a>
+            </div>
+        </div>
+        <div class="header-bottom">
+            <div class="search-bar">
+                <input type="text" class="search-box" placeholder="City, Neighborhood, ZIP, Address">
+            </div>
+            <div class="search-options">
+                <button class="search-option">For Sale</button>
+                <button class="search-option">Price</button>
+                <button class="search-option">Beds &amp; Baths</button>
+                <button class="search-option">Home Type</button>
+                <div class="deals-dropdown">
+                    <button class="search-option">Deals</button>
+                    <div class="deals-dropdown-content">
+                        <label>CoC: <input type="text" name="coc" value="5%" /></label>
+                        <label>Cash to Close: <input type="text" name="cash-to-close" value="100,000" /></label>
+                        <label>Cap Rate (Low): <input type="text" name="cap-rate-low" value="5%" /></label>
+                        <label>Cap Rate (High): <input type="text" name="cap-rate-high" value="10%" /></label>
+                        <!-- Add more fields as needed -->
+                    </div>
+                </div>
+                <button class="search-option">More</button>
+                <button class="search-button">Save Search</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="map"></div>
+        <div class="listing-container">
+            <div class="listing-header">
+                <h2>Real Estate & Homes For Sale</h2>
+                <p>{{ data|length }} results</p>
+            </div>
+            <div class="sort-dropdown">
+                <label for="sort-by">Sort by:</label>
+                <select id="sort-by">
+                    <option value="price">Price</option>
+                    <option value="bedrooms">Bedrooms</option>
+                    <option value="bathrooms">Bathrooms</option>
+                    <!-- Add more sorting options as needed -->
+                </select>
+            </div>
+            <div class="listing-grid">
+                {% for row in data %}
+                <div class="listing-card">
+                    <img src="{{ row['imgSrc'] }}" alt="House Image">
+                    <div class="listing-details">
+                        <div class="price-details">
+                            <h3>${{ "{:,.0f}".format(row['price']) }}</h3>
+                            <p>{{ row['bedrooms'] }} bds | {{ row['bathrooms'] }} ba | {{ row['livingArea'] | int }}
+                                sqft</p>
+                        </div>
+                        <p class="address">{{ row['streetAddress'] }}</p>
+                        <p class="listing-info">{{ row['homeType'] }} | {{ row['city'] }}, {{ row['state'] }} {{
+                            row['zipcode'] }}</p>
+                        <div class="listing-stats">
+                            <p>Cash on Cash Return: {{ row['Cash on Cash Return %'] }}%</p>
+                            <p>Monthly Cash Flow: ${{ "{:,.0f}".format(row['Monthly Cash Flow']) }}</p>
+                            <p>Cap Rate: {{ row['Cap Rate'] }}%</p>
+                            <p>Cash to Close: ${{ "{:,.0f}".format(row['Cash To Close']) }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
