@@ -347,15 +347,27 @@
     });
 
     function updateMarkerColors() {
-        listings.forEach(function (listing) {
-            // Condition to determine if listing meets criteria
-            // Example condition, replace with actual criteria
-            listing.meetsCriteria = (listing['Cash on Cash Return %'] >= 5); 
+    const cocValue = parseFloat(document.querySelector('input[name="coc"]').value);
+    const cashToCloseValue = parseFloat(document.querySelector('input[name="cash-to-close"]').value.replace(/,/g, ''));
+    const capRateLowValue = parseFloat(document.querySelector('input[name="cap-rate-low"]').value);
+    const capRateHighValue = parseFloat(document.querySelector('input[name="cap-rate-high"]').value);
 
-            var markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
-            listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
-        });
-    }
+    listings.forEach(function (listing) {
+        const cashOnCashReturn = listing['Cash on Cash Return %'];
+        const cashToClose = listing['Cash To Close'];
+        const capRate = listing['Cap Rate'];
+
+        listing.meetsCriteria = (
+            cashOnCashReturn >= cocValue &&
+            cashToClose <= cashToCloseValue &&
+            capRate >= capRateLowValue &&
+            capRate <= capRateHighValue
+        );
+
+        const markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
+        listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
+    });
+}
 
     var inputFields = document.querySelectorAll('.deals-dropdown-content input');
     inputFields.forEach(function (input) {
