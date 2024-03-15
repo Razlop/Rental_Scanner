@@ -289,6 +289,8 @@
 
         .listing-card:hover {
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform: translateY(-5px);
+            cursor: pointer;
         }
 
         .listing-card img {
@@ -367,6 +369,16 @@
         .custom-info-window p {
             margin: 0;
         }
+
+        .listing-section {
+            margin-bottom: 20px;
+        }
+
+        .listing-section h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
     </style>
     <script>
         $(document).ready(function () {
@@ -402,6 +414,11 @@
         });
 
     </script>
+    <script type="text/javascript">
+        var listingsData = JSON.parse("{{ data | tojson | safe }}");
+    </script>
+
+
     <script>
         $(document).ready(function () {
             var dataTable = $('#house-listings').DataTable();
@@ -497,6 +514,14 @@
                 capRateLowValue = parseFloat(document.querySelector('input[name="cap-rate-low"]').value);
                 capRateHighValue = parseFloat(document.querySelector('input[name="cap-rate-high"]').value);
 
+                const dealsGrid = document.getElementById('deals-grid');
+                const potentialDealsGrid = document.getElementById('potential-deals-grid');
+                const otherListingsGrid = document.getElementById('other-listings-grid');
+
+                dealsGrid.innerHTML = '';
+                potentialDealsGrid.innerHTML = '';
+                otherListingsGrid.innerHTML = '';
+
                 listings.forEach(function (listing) {
                     const cashOnCashReturn = listing['Cash on Cash Return %'];
                     const cashToClose = listing['Cash To Close'];
@@ -515,15 +540,64 @@
 
                     if (listing.meetsCriteria) {
                         listing.markerColor = '#4CAF50';
+                        dealsGrid.innerHTML += createListingCard(listing);
                     } else if (cocClose && !listing.meetsCriteria) {
                         listing.markerColor = 'yellow';
+                        potentialDealsGrid.innerHTML += createListingCard(listing);
                     } else {
                         listing.markerColor = '#006AFF';
+                        otherListingsGrid.innerHTML += createListingCard(listing);
                     }
 
                     listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText));
                 });
+                initListingHoverEvents();
             }
+
+
+            function createListingCard(listing) {
+                // Assuming listing.id is your unique identifier for each listing
+                return `
+        <div class="listing-card" data-listing-id="${listing.zpid}">
+            <img src="${listing.imgSrc}" alt="House Image">
+            <div class="listing-details">
+                <div class="price-details">
+                    <h3>$${listing.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</h3>
+                    <p>${listing.bedrooms} bds | ${listing.bathrooms} ba | ${listing.livingArea} sqft</p>
+                </div>
+                <p class="address">${listing.streetAddress}</p>
+                <p class="listing-info">${listing.homeType} | ${listing.city}, ${listing.state} ${listing.zipcode}</p>
+                <div class="listing-stats">
+                    <p>Cash on Cash Return: ${listing['Cash on Cash Return %']}%</p>
+                    <p>Monthly Cash Flow: $${listing['Monthly Cash Flow'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
+                    <p>Cap Rate: ${listing['Cap Rate']}%</p>
+                    <p>Cash to Close: $${listing['Cash To Close'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
+                </div>
+            </div>
+        </div>
+    `;
+            }
+
+            function handleListingHover(event) {
+                const listingId = event.currentTarget.getAttribute('data-listing-id');
+                const listing = listings.find(function (listing) {
+                    return listing.zpid == listingId;
+                });
+
+                if (listing) {
+                    const size = event.type === 'mouseenter' ? 30 : 20;
+                    listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText, size));
+                }
+            }
+
+            function initListingHoverEvents() {
+                const listingCards = document.querySelectorAll('.listing-card');
+                listingCards.forEach(function (card) {
+                    card.addEventListener('mouseenter', handleListingHover);
+                    card.addEventListener('mouseleave', handleListingHover);
+                });
+            }
+
 
             // Helper function to determine if a listing's value is 'close' to the user's input
             function isCloseToMetric(listingValue, inputValue, tolerancePercent) {
@@ -539,17 +613,18 @@
             updateMarkerColors(); // Initialize marker colors based on criteria
 
 
-            function getMarkerIcon(color, priceText) {
-                var markerSVG = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" width="40" height="20">
-                <rect x="0" y="0" width="40" height="20" rx="10" ry="10" fill="${color}" />
-                <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-weight="bold" font-size="10">${priceText}</text>
-            </svg>
-        `;
+            function getMarkerIcon(color, priceText, size = 20) {
+                const fontSize = size === 30 ? 14 : 10;
+                const markerSVG = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size * 2} ${size}" width="${size * 2}" height="${size}">
+            <rect x="0" y="0" width="${size * 2}" height="${size}" rx="${size / 2}" ry="${size / 2}" fill="${color}" />
+            <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-weight="bold" font-size="${fontSize}">${priceText}</text>
+        </svg>
+    `;
                 return {
                     url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(markerSVG),
-                    scaledSize: new google.maps.Size(40, 20),
-                    anchor: new google.maps.Point(20, 10)
+                    scaledSize: new google.maps.Size(size * 2, size),
+                    anchor: new google.maps.Point(size, size / 2)
                 };
             }
         }
@@ -558,7 +633,9 @@
 </head>
 
 <body>
+
     <header>
+
         <div class="header-top">
             <a href="#" class="logo">Stefen</a>
             <div class="header-nav">
@@ -618,31 +695,40 @@
                     <!-- Add more sorting options as needed -->
                 </select>
             </div>
-            <div class="listing-grid">
-                {% for row in data %}
-                <div class="listing-card">
-                    <img src="{{ row['imgSrc'] }}" alt="House Image">
-                    <div class="listing-details">
-                        <div class="price-details">
-                            <h3>${{ "{:,.0f}".format(row['price']) }}</h3>
-                            <p>{{ row['bedrooms'] }} bds | {{ row['bathrooms'] }} ba | {{ row['livingArea'] | int }}
-                                sqft</p>
-                        </div>
-                        <p class="address">{{ row['streetAddress'] }}</p>
-                        <p class="listing-info">{{ row['homeType'] }} | {{ row['city'] }}, {{ row['state'] }} {{
-                            row['zipcode'] }}</p>
-                        <div class="listing-stats">
-                            <p>Cash on Cash Return: {{ row['Cash on Cash Return %'] }}%</p>
-                            <p>Monthly Cash Flow: ${{ "{:,.0f}".format(row['Monthly Cash Flow']) }}</p>
-                            <p>Cap Rate: {{ row['Cap Rate'] }}%</p>
-                            <p>Cash to Close: ${{ "{:,.0f}".format(row['Cash To Close']) }}</p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+            <div class="listing-section">
+                <h3>Deals</h3>
+                <div id="deals-grid" class="listing-grid"></div>
+            </div>
+            <div class="listing-section">
+                <h3>Potential Deals</h3>
+                <div id="potential-deals-grid" class="listing-grid"></div>
+            </div>
+            <div class="listing-section">
+                <h3>Other</h3>
+                <div id="other-listings-grid" class="listing-grid"></div>
             </div>
         </div>
     </div>
+    <script>
+        // Ensure this script block is after the script block where listingsData is defined
+        $(document).ready(function () {
+            listingsData.forEach(function (listing) {
+                var listingCardHTML = `
+                    <div class="listing-card" data-listing-id="${listing.zpid}">
+                        <img src="${listing.imgSrc}" alt="House Image">
+                        <div class="listing-details">
+                            <!-- Add more details here -->
+                            <h5>${listing.streetAddress}, ${listing.city}</h5>
+                            <p>${listing.price}</p>
+                        </div>
+                    </div>
+                `;
+                // Append this card to your listings container
+                $('.listing-container').append(listingCardHTML);
+            });
+        });
+    </script>
+
 </body>
 
 </html>
