@@ -1,0 +1,389 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    font-size: 14px;
+}
+
+header {
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #006AFF;
+    color: white;
+    padding: 0.5em 2em;
+}
+
+.header-bottom {
+    display: flex;
+    align-items: center;
+    padding: 0.5em 2em;
+    background-color: #fff;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    justify-content: flex-start;
+    /* Ensure content starts from the left */
+}
+
+.header-top .logo {
+    font-size: 24px;
+    color: white;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.header-nav,
+.saved-searches {
+    display: flex;
+}
+
+.deals-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.deal-button {
+    padding: 0.5em 1em;
+    background-color: #fff;
+    /* White background */
+    color: #333;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    /* Rounded edges */
+    cursor: pointer;
+    margin-right: 8px;
+    /* Add some margin to the right */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* Optional: Add subtle shadow */
+    transition: all 0.3s ease;
+    /* Smooth transition for color changes */
+}
+
+
+/* Style for the dropdown content container */
+.deals-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    /* White background */
+    min-width: 250px;
+    /* Adjust to match the design */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    /* Shadow for the dropdown */
+    z-index: 1;
+    border-radius: 8px;
+    /* Match the border radius */
+    padding: 12px;
+    border: 1px solid #ddd;
+    /* Add a border */
+    top: 100%;
+    /* Align it right below the dropdown button */
+    left: 0;
+    /* Align to the left edge of the .deals-dropdown */
+    margin-top: 4px;
+    /* Add a little space between button and dropdown */
+}
+
+/* Hover state for the dropdown button */
+.deal-button:hover {
+    background-color: #e0e0e0;
+    /* Lighter shade on hover */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    /* Optional: Slightly deeper shadow on hover */
+}
+
+/* Style for dropdown labels and inputs */
+.deals-dropdown-content label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    /* Set the text color */
+}
+
+.deals-dropdown-content input {
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    /* Rounded corners for input fields */
+    box-sizing: border-box;
+    /* Include padding and border in the element's total width and height */
+}
+
+/* Button container styles */
+.dropdown-buttons {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    /* Add space between the buttons and the form elements above */
+}
+
+/* General button styles */
+.dropdown-btn {
+    padding: 10px 20px;
+    text-align: center;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-weight: 600;
+    margin: 4px;
+    /* Add a small margin around buttons */
+}
+
+/* Specific styles for the cancel button */
+.cancel {
+    background-color: #f7f7f7;
+    /* Light gray background */
+    color: #333;
+    /* Dark text */
+}
+
+/* Specific styles for the apply button */
+.apply {
+    background-color: #0074e4;
+    /* Use the same blue as in the header */
+    color: white;
+    /* White text */
+    border-color: #005cbf;
+    /* Slightly darker border for some depth */
+}
+
+/* Hover styles for buttons */
+.dropdown-btn:hover {
+    opacity: 0.8;
+}
+
+/* more dropdown */
+.more-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.more-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    min-width: 250px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+}
+
+.nav-item {
+    padding: 0.5em 1em;
+    margin: 0 0.25em;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.nav-item:not(.logo):hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.saved-searches a {
+    margin-left: 20px;
+    font-size: 0.9em;
+}
+
+.search-bar {
+    width: 15%;
+    /* Adjust the width of the search bar to 15% of its container */
+    margin-right: 1em;
+    /* Adjust if needed to create some space to the next element */
+}
+
+.search-box {
+    width: 100%;
+    /* This makes the input field take up the full width of its container, the .search-bar */
+    padding: 0.5em;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 1em;
+}
+
+.search-options {
+    display: flex;
+    align-items: center;
+}
+
+.search-option,
+.search-button {
+    padding: 0.5em 1em;
+    margin-left: 0.5em;
+    background-color: #f7f7f7;
+    color: #333;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.search-option:hover,
+.search-button:hover {
+    background-color: #e0e0e0;
+}
+
+.search-button {
+    background-color: #0074e4;
+    color: white;
+}
+
+.search-button:hover {
+    background-color: #005cbf;
+}
+
+.container {
+    display: flex;
+    height: calc(100vh - 120px);
+}
+
+#map {
+    flex: 1;
+    height: 100%;
+}
+
+.listing-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.listing-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.listing-header h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.listing-header p {
+    font-size: 16px;
+    color: #666;
+    margin: 0;
+}
+
+.listing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.listing-card {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.listing-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
+    cursor: pointer;
+}
+
+.listing-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.listing-details {
+    padding: 10px;
+}
+
+.price-details {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.price-details h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    color: #006AFF;
+}
+
+.price-details p {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
+
+.address {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.listing-info {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.listing-stats p {
+    font-size: 14px;
+    margin: 2px 0;
+}
+
+.custom-marker {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+    text-align: center;
+    font-weight: bold;
+    color: #006AFF;
+    width: 50px;
+}
+
+.custom-info-window {
+    max-width: 200px;
+    padding: 10px;
+}
+
+.custom-info-window img {
+    width: 100%;
+    height: auto;
+    margin-bottom: 5px;
+}
+
+.custom-info-window h4 {
+    margin: 0 0 5px;
+}
+
+.custom-info-window p {
+    margin: 0;
+}
+
+.listing-section {
+    margin-bottom: 20px;
+}
+
+.listing-section h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
