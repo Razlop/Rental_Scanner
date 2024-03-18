@@ -3,279 +3,124 @@
 
 <head>
     <title>House Listings</title>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initMap"></script>
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            margin: 0;
-            padding: 0;
-            font-size: 14px;
+    <script>
+        $(document).ready(function () {
+            // Toggle the dropdown on click
+            $('.deals-dropdown .search-option').on('click', function (event) {
+                $(this).next('.deals-dropdown-content').toggle();
+                event.stopPropagation(); // Prevent event from bubbling up to the document
+            });
+
+            // Close the dropdown when clicking outside
+            $(document).on('click', function () {
+                $('.deals-dropdown-content').hide();
+            });
+
+            // Prevent the dropdown from closing when clicking inside it
+            $('.deals-dropdown-content').on('click', function (event) {
+                event.stopPropagation(); // Stop the click from propagating up to the document
+            });
+
+            // Hide dropdown when cancel is clicked
+            $('#cancel-button').on('click', function () {
+                $(this).closest('.deals-dropdown-content').hide();
+            });
+
+            // Logic for when apply is clicked
+            $('#apply-button').on('click', function () {
+                updateMarkerColors();
+                $(this).closest('.deals-dropdown-content').hide();
+            });
+
+            // Toggle the "More" dropdown on click
+            $('.more-dropdown .search-option').on('click', function (event) {
+                $(this).next('.more-dropdown-content').toggle();
+                event.stopPropagation();
+            });
+
+            // Close the "More" dropdown when clicking outside
+            $(document).on('click', function (event) {
+                if (!$(event.target).closest('.more-dropdown').length) {
+                    $('.more-dropdown-content').hide();
+                }
+            });
+
+            // Prevent the "More" dropdown from closing when clicking inside it
+            $('.more-dropdown-content').on('click', function (event) {
+                event.stopPropagation();
+            });
+
+            // Hide the "More" dropdown when cancel is clicked
+            $('#more-cancel-button').on('click', function () {
+                $(this).closest('.more-dropdown-content').hide();
+            });
+
+            // Update the listings when the "More" apply button is clicked
+            $('#more-apply-button').on('click', function () {
+                updateListings();
+                $(this).closest('.more-dropdown-content').hide();
+            });
+        });
+
+        // Assuming global scope or properly managed scope for these variables
+        var cocValue, cashToCloseValue, capRateLowValue, capRateHighValue, tolerancePercent = 5;
+
+        function updateListings() {
+            const selectedDaysOnMarket = Array.from(document.querySelectorAll('#days-on-market option:checked'), option => option.value);
+
+            // Clear current listings from the UI
+            clearListingsUI();
+
+            window.listings.forEach(function (listing) {
+                const meetsSelectedDaysOnMarket = selectedDaysOnMarket.includes('any') || (listing.daysOnZillow !== -1 && listing.daysOnZillow <= Math.max(...selectedDaysOnMarket.map(Number)));
+                listing.marker.setVisible(meetsSelectedDaysOnMarket);
+
+                if (meetsSelectedDaysOnMarket) {
+                    if (listing.markerColor === 'yellow') {
+                        // For potential deals, preserve the yellow marker color
+                        updateListingUI(listing);
+                        listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText));
+                    } else {
+                        if (listing.meetsCriteria) {
+                            listing.markerColor = '#4CAF50'; // Green for deals
+                        } else {
+                            listing.markerColor = '#006AFF'; // Blue for others
+                        }
+                        updateListingUI(listing);
+                        listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText));
+                    }
+                }
+            });
+
+            initListingHoverEvents();
+        }
+        function clearListingsUI() {
+            document.getElementById('deals-grid').innerHTML = '';
+            document.getElementById('potential-deals-grid').innerHTML = '';
+            document.getElementById('other-listings-grid').innerHTML = '';
         }
 
-        header {
-            display: flex;
-            flex-direction: column;
-            background-color: #fff;
+        function updateListingUI(listing) {
+            // Based on listing.markerColor, append listing to the correct grid
+            const gridId = listing.markerColor === '#4CAF50' ? 'deals-grid' :
+                listing.markerColor === 'yellow' ? 'potential-deals-grid' : 'other-listings-grid';
+            document.getElementById(gridId).innerHTML += createListingCard(listing);
         }
 
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: #006AFF;
-            color: white;
-            padding: 0.5em 2em;
-        }
 
-        .header-bottom {
-            display: flex;
-            align-items: center;
-            padding: 0.5em 2em;
-            background-color: #fff;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
-        }
 
-        .header-top .logo {
-            font-size: 24px;
-            color: white;
-            text-decoration: none;
-            font-weight: 700;
-        }
 
-        .header-nav,
-        .saved-searches {
-            display: flex;
-        }
 
-        .deals-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .deals-dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 200px;
-            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-            padding: 12px;
-            z-index: 1;
-        }
-
-        .deals-dropdown:hover .deals-dropdown-content {
-            display: block;
-        }
-
-        .deals-dropdown-content label {
-            display: block;
-            margin-bottom: 8px;
-        }
-
-        .deals-dropdown-content input {
-            width: 100%;
-            padding: 4px;
-            margin-top: 4px;
-        }
-
-        .nav-item {
-            padding: 0.5em 1em;
-            margin: 0 0.25em;
-            color: white;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .nav-item:not(.logo):hover {
-            background-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .saved-searches a {
-            margin-left: 20px;
-            font-size: 0.9em;
-        }
-
-        .search-bar {
-            flex-grow: 1;
-            margin-right: 1em;
-        }
-
-        .search-box {
-            width: 100%;
-            padding: 0.5em;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            font-size: 1em;
-        }
-
-        .search-options {
-            display: flex;
-            align-items: center;
-        }
-
-        .search-option,
-        .search-button {
-            padding: 0.5em 1em;
-            margin-left: 0.5em;
-            background-color: #f7f7f7;
-            color: #333;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .search-option:hover,
-        .search-button:hover {
-            background-color: #e0e0e0;
-        }
-
-        .search-button {
-            background-color: #0074e4;
-            color: white;
-        }
-
-        .search-button:hover {
-            background-color: #005cbf;
-        }
-
-        .container {
-            display: flex;
-            height: calc(100vh - 120px);
-        }
-
-        #map {
-            flex: 1;
-            height: 100%;
-        }
-
-        .listing-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .listing-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .listing-header h2 {
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .listing-header p {
-            font-size: 16px;
-            color: #666;
-            margin: 0;
-        }
-
-        .listing-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-
-        .listing-card {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: box-shadow 0.3s ease;
-        }
-
-        .listing-card:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        .listing-card img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-        }
-
-        .listing-details {
-            padding: 10px;
-        }
-
-        .price-details {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 5px;
-        }
-
-        .price-details h3 {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 0;
-            color: #006AFF;
-        }
-
-        .price-details p {
-            font-size: 14px;
-            color: #666;
-            margin: 0;
-        }
-
-        .address {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .listing-info {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .listing-stats p {
-            font-size: 14px;
-            margin: 2px 0;
-        }
-
-        .custom-marker {
-            background-color: white;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 5px;
-            text-align: center;
-            font-weight: bold;
-            color: #006AFF;
-            width: 50px;
-        }
-
-        .custom-info-window {
-            max-width: 200px;
-            padding: 10px;
-        }
-
-        .custom-info-window img {
-            width: 100%;
-            height: auto;
-            margin-bottom: 5px;
-        }
-
-        .custom-info-window h4 {
-            margin: 0 0 5px;
-        }
-
-        .custom-info-window p {
-            margin: 0;
-        }
-    </style>
-
+    </script>
+    <script type="text/javascript">
+        var listingsData = JSON.parse("{{ data | tojson | safe }}");
+    </script>
     <script>
         $(document).ready(function () {
             var dataTable = $('#house-listings').DataTable();
@@ -307,96 +152,170 @@
         });
     </script>
     <script>
+        function createListingCard(listing) {
+            // Assuming listing.id is your unique identifier for each listing
+            return `
+        <div class="listing-card" data-listing-id="${listing.zpid}">
+            <img src="${listing.imgSrc}" alt="House Image">
+            <div class="listing-details">
+                <div class="price-details">
+                    <h3>$${listing.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</h3>
+                    <p>${listing.bedrooms} bds | ${listing.bathrooms} ba | ${listing.livingArea} sqft</p>
+                </div>
+                <p class="address">${listing.streetAddress}</p>
+                <p class="listing-info">${listing.homeType} | ${listing.city}, ${listing.state} ${listing.zipcode}</p>
+                <div class="listing-stats">
+                    <p>Cash on Cash Return: ${listing['Cash on Cash Return %']}%</p>
+                    <p>Monthly Cash Flow: $${listing['Monthly Cash Flow'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
+                    <p>Cap Rate: ${listing['Cap Rate']}%</p>
+                    <p>Cash to Close: $${listing['Cash To Close'].toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
+                </div>
+            </div>
+        </div>
+    `;
+        }
+
+        function getMarkerIcon(color, priceText, size = 20) {
+            const fontSize = size === 30 ? 14 : 10;
+            const markerSVG = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size * 2} ${size}" width="${size * 2}" height="${size}">
+            <rect x="0" y="0" width="${size * 2}" height="${size}" rx="${size / 2}" ry="${size / 2}" fill="${color}" />
+            <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-weight="bold" font-size="${fontSize}">${priceText}</text>
+        </svg>
+    `;
+            return {
+                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(markerSVG),
+                scaledSize: new google.maps.Size(size * 2, size),
+                anchor: new google.maps.Point(size, size / 2)
+            };
+        }
+        function initListingHoverEvents() {
+            const listingCards = document.querySelectorAll('.listing-card');
+            listingCards.forEach(function (card) {
+                card.addEventListener('mouseenter', handleListingHover);
+                card.addEventListener('mouseleave', handleListingHover);
+            });
+        }
+
+        function updateMarkerColors() {
+            cocValue = parseFloat(document.querySelector('input[name="coc"]').value);
+            cashToCloseValue = parseFloat(document.querySelector('input[name="cash-to-close"]').value.replace(/,/g, ''));
+            capRateLowValue = parseFloat(document.querySelector('input[name="cap-rate-low"]').value);
+            capRateHighValue = parseFloat(document.querySelector('input[name="cap-rate-high"]').value);
+
+            const dealsGrid = document.getElementById('deals-grid');
+            const potentialDealsGrid = document.getElementById('potential-deals-grid');
+            const otherListingsGrid = document.getElementById('other-listings-grid');
+
+            dealsGrid.innerHTML = '';
+            potentialDealsGrid.innerHTML = '';
+            otherListingsGrid.innerHTML = '';
+
+            listings.forEach(function (listing) {
+                const cashOnCashReturn = listing['Cash on Cash Return %'];
+                const cashToClose = listing['Cash To Close'];
+                const capRate = listing['Cap Rate'];
+
+                listing.meetsCriteria = (
+                    cashOnCashReturn >= cocValue &&
+                    cashToClose <= cashToCloseValue &&
+                    capRate >= capRateLowValue &&
+                    capRate <= capRateHighValue
+                );
+
+                const tolerancePercent = 5;
+                const cocLowerBound = cocValue - tolerancePercent;
+                const cocClose = cashOnCashReturn >= cocLowerBound && cashOnCashReturn < cocValue;
+
+                if (listing.meetsCriteria) {
+                    listing.markerColor = '#4CAF50';
+                    dealsGrid.innerHTML += createListingCard(listing);
+                } else if (cocClose && !listing.meetsCriteria) {
+                    listing.markerColor = 'yellow';
+                    potentialDealsGrid.innerHTML += createListingCard(listing);
+                } else {
+                    listing.markerColor = '#006AFF';
+                    otherListingsGrid.innerHTML += createListingCard(listing);
+                }
+
+                listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText));
+            });
+            initListingHoverEvents();
+        }
+
+        function handleListingHover(event) {
+            const listingId = event.currentTarget.getAttribute('data-listing-id');
+            const listing = listings.find(function (listing) {
+                return listing.zpid == listingId;
+            });
+
+            if (listing) {
+                const size = event.type === 'mouseenter' ? 30 : 20;
+                listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText, size));
+            }
+        }
+
+        // Helper function to determine if a listing's value is 'close' to the user's input
+        function isCloseToMetric(listingValue, inputValue, tolerancePercent) {
+            var tolerance = inputValue * (tolerancePercent / 100);
+            return listingValue >= (inputValue - tolerance) && listingValue <= (inputValue + tolerance);
+        }
+
         function initMap() {
-    var map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 10,
-        center: { lat: 42.686718, lng: -83.1338 } // Set this to a default location
-    });
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 10,
+                center: { lat: 42.686718, lng: -83.1338 } // Set this to a default location
+            });
 
-    var listings = JSON.parse('{{ data | tojson | safe }}');
-    var infoWindow = new google.maps.InfoWindow();
+            window.listings = JSON.parse('{{ data | tojson | safe }}');
+            var infoWindow = new google.maps.InfoWindow();
 
-    listings.forEach(function (listing) {
-        var price = listing.price;
-        var priceText = price >= 1000000 ? (price / 1000000).toFixed(1) + 'M' : (price / 1000).toFixed(0) + 'k';
-        listing.priceText = priceText;
-        listing.meetsCriteria = false; // Initialize meetsCriteria property
+            listings.forEach(function (listing) {
+                var price = listing.price;
+                var priceText = price >= 1000000 ? (price / 1000000).toFixed(1) + 'M' : (price / 1000).toFixed(0) + 'k';
+                listing.priceText = priceText;
+                listing.meetsCriteria = false; // Initialize meetsCriteria property
 
-        var marker = new google.maps.Marker({
-            position: { lat: listing.latitude, lng: listing.longitude },
-            map: map,
-            title: listing.streetAddress,
-            icon: getMarkerIcon('#006AFF', priceText) // Initial blue icon
-        });
+                var marker = new google.maps.Marker({
+                    position: { lat: listing.latitude, lng: listing.longitude },
+                    map: map,
+                    title: listing.streetAddress,
+                    icon: getMarkerIcon('#006AFF', priceText) // Initial blue icon
+                });
 
-        var infoWindowContent = `
+                var infoWindowContent = `
             <div class="custom-info-window">
                 <img src="${listing.imgSrc}" alt="House Image">
                 <h4>${listing.streetAddress}</h4>
                 <p>${listing.bedrooms} bds | ${listing.bathrooms} ba | ${listing.livingArea} sqft</p>
                 <p>$${listing.price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</p>
             </div>
-        `;
+            `;
 
-        marker.addListener('click', function () {
-            infoWindow.setContent(infoWindowContent);
-            infoWindow.open(map, marker);
-        });
+                marker.addListener('click', function () {
+                    infoWindow.setContent(infoWindowContent);
+                    infoWindow.open(map, marker);
+                });
 
-        listing.marker = marker;
-    });
+                listing.marker = marker;
+            });
 
-    function updateMarkerColors() {
-    const cocValue = parseFloat(document.querySelector('input[name="coc"]').value);
-    const cashToCloseValue = parseFloat(document.querySelector('input[name="cash-to-close"]').value.replace(/,/g, ''));
-    const capRateLowValue = parseFloat(document.querySelector('input[name="cap-rate-low"]').value);
-    const capRateHighValue = parseFloat(document.querySelector('input[name="cap-rate-high"]').value);
+            // Add this code block after the listings.forEach loop
+            google.maps.event.addListener(map, 'zoom_changed', function () {
+                listings.forEach(function (listing) {
+                    listing.marker.setIcon(getMarkerIcon(listing.markerColor, listing.priceText));
+                });
+            });
 
-    listings.forEach(function (listing) {
-        const cashOnCashReturn = listing['Cash on Cash Return %'];
-        const cashToClose = listing['Cash To Close'];
-        const capRate = listing['Cap Rate'];
+            let cocValue, cashToCloseValue, capRateLowValue, capRateHighValue;
 
-        listing.meetsCriteria = (
-            cashOnCashReturn >= cocValue &&
-            cashToClose <= cashToCloseValue &&
-            capRate >= capRateLowValue &&
-            capRate <= capRateHighValue
-        );
+            $('#apply-button').on('click', function () {
+                updateMarkerColors();
+                $(this).closest('.deals-dropdown-content').hide();
+            });
 
-        const markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
-        listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
-    });
-}
-
-    var inputFields = document.querySelectorAll('.deals-dropdown-content input');
-    inputFields.forEach(function (input) {
-        input.addEventListener('change', updateMarkerColors);
-    });
-
-    updateMarkerColors(); // Initialize marker colors based on criteria
-
-    map.addListener('zoom_changed', function() {
-        listings.forEach(function (listing) {
-            var markerColor = listing.meetsCriteria ? '#4CAF50' : '#006AFF';
-            listing.marker.setIcon(getMarkerIcon(markerColor, listing.priceText));
-        });
-    });
-
-    function getMarkerIcon(color, priceText) {
-        var markerSVG = `
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20" width="40" height="20">
-                <rect x="0" y="0" width="40" height="20" rx="10" ry="10" fill="${color}" />
-                <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#FFFFFF" font-weight="bold" font-size="10">${priceText}</text>
-            </svg>
-        `;
-        return {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(markerSVG),
-            scaledSize: new google.maps.Size(40, 20),
-            anchor: new google.maps.Point(20, 10)
-        };
-    }
-}
+            updateMarkerColors(); // Initialize marker colors based on criteria
+        }
 
     </script>
 </head>
@@ -434,9 +353,28 @@
                         <label>Cap Rate (Low): <input type="text" name="cap-rate-low" value="5%" /></label>
                         <label>Cap Rate (High): <input type="text" name="cap-rate-high" value="10%" /></label>
                         <!-- Add more fields as needed -->
+                        <div class="dropdown-buttons">
+                            <button id="cancel-button" class="dropdown-btn cancel">Cancel</button>
+                            <button id="apply-button" class="dropdown-btn apply">Apply</button>
+                        </div>
                     </div>
                 </div>
-                <button class="search-option">More</button>
+                <div class="more-dropdown">
+                    <button class="search-option">More</button>
+                    <div class="more-dropdown-content">
+                        <label>Days on Market:</label>
+                        <select id="days-on-market" multiple>
+                            <option value="7">7 days</option>
+                            <option value="14">14 days</option>
+                            <option value="30">30 days</option>
+                            <option value="any" selected>Any</option>
+                        </select>
+                        <div class="dropdown-buttons">
+                            <button id="more-cancel-button" class="dropdown-btn cancel">Cancel</button>
+                            <button id="more-apply-button" class="dropdown-btn apply">Apply</button>
+                        </div>
+                    </div>
+                </div>
                 <button class="search-button">Save Search</button>
             </div>
         </div>
@@ -458,28 +396,17 @@
                     <!-- Add more sorting options as needed -->
                 </select>
             </div>
-            <div class="listing-grid">
-                {% for row in data %}
-                <div class="listing-card">
-                    <img src="{{ row['imgSrc'] }}" alt="House Image">
-                    <div class="listing-details">
-                        <div class="price-details">
-                            <h3>${{ "{:,.0f}".format(row['price']) }}</h3>
-                            <p>{{ row['bedrooms'] }} bds | {{ row['bathrooms'] }} ba | {{ row['livingArea'] | int }}
-                                sqft</p>
-                        </div>
-                        <p class="address">{{ row['streetAddress'] }}</p>
-                        <p class="listing-info">{{ row['homeType'] }} | {{ row['city'] }}, {{ row['state'] }} {{
-                            row['zipcode'] }}</p>
-                        <div class="listing-stats">
-                            <p>Cash on Cash Return: {{ row['Cash on Cash Return %'] }}%</p>
-                            <p>Monthly Cash Flow: ${{ "{:,.0f}".format(row['Monthly Cash Flow']) }}</p>
-                            <p>Cap Rate: {{ row['Cap Rate'] }}%</p>
-                            <p>Cash to Close: ${{ "{:,.0f}".format(row['Cash To Close']) }}</p>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+            <div class="listing-section">
+                <h3>Deals</h3>
+                <div id="deals-grid" class="listing-grid"></div>
+            </div>
+            <div class="listing-section">
+                <h3>Potential Deals</h3>
+                <div id="potential-deals-grid" class="listing-grid"></div>
+            </div>
+            <div class="listing-section">
+                <h3>Other</h3>
+                <div id="other-listings-grid" class="listing-grid"></div>
             </div>
         </div>
     </div>
